@@ -8,13 +8,30 @@ Semantic Network Creater
 import sys, re
 from pyparsing import *
 
+
+def findList(inList, item):
+    if item in inList:
+        return inList
+    else:
+        for x in inList:
+            if isinstance(x, list):
+                result = findList(x, item)
+                if result != -1:
+                    return result
+                
+    return -1
+    
+def findListLevels( levels, inList, item):
+    result = item
+    for x in range(levels):
+        result = findList(inList, result)
+    
+    return result
+
 if __name__ == '__main__':
     print 'Hello'
     
     file = open(sys.argv[1], 'r')
-    #fc = file.read()
-    #sentences = str.split(fc, "NEXT-SENTENCE")
-    #print str.split(sentences[1], "(********** INTERPRETATION STARTS *************)")[1]
     
     sentences = []
     i = -1
@@ -46,21 +63,30 @@ if __name__ == '__main__':
     sexp = Forward()
     sexpList = Group(LPAR + ZeroOrMore(sexp) + RPAR)
     sexp << ( Word(alphanums+"-_*/") | sexpList )
-
-    """
-    gElement = "(" + Word( alphanums ) + ")"
-    gPhrase = "(" + Word( alphanums ) + ZeroOrMore( gPhrase ) + ")"
-    gDT = "(DT" + Word(alphanums) + ")"
-    gADJ = "(ADJ" + Word(alphanums) + ")"
-    gNOUN = "(NOUN" + Word(alphanums) + ")"
-    gNP = "(" + ZeroOrMore(gDT) + ZeroOrMore(gADJ) + ZeroOrMore(gNOUN) + ")"
-    gSemanticRole = "(" + "THEME" + ")"
-    gSense = "(" + OneOrMore(gElement) + ")"
-    #gPrep = "(PREP" + 
-    gSubj = "(SUBJ" + gNP + gSense + gSemanticRole + gPrep + ")"
-    gSentence = "(" + Word(alphanums) + OneOrMore( gElement ) +")"
-    """
-    print sexp.parseString( sentences[0] )
+    
+    #parse = sexp.parseString( sentences[1] )
+    #print parse
+    #t = {'test':[1, 2, 3, [5]]}
+    #t['test'].append(5)
+    #print t['test']
+    #parse.dump(indent='True', depth=5)
+    #findWord(parse.asList(), 'FAMINE1')
+    
+    for sentence in sentences:
+        try:
+            parse = sexp.parseString(sentence)
+            print findListLevels(3, parse.asList(), 'FAMINE1')[3]
+        except IndexError:
+            pass
+        except TypeError:
+            pass
+        except ParseException:
+            pass
+            #print "Could not parse: "
+            #print sentence
+            #print
+        #print sentence
+        print
     
     #contents = file.read()
     #print len(re.findall('famine', contents))
