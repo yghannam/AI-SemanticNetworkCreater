@@ -29,7 +29,7 @@ def findListLevels( levels, inList, item):
     return result
 
 if __name__ == '__main__':
-    print 'Hello'
+    print 'Hello\n'
     
     file = open(sys.argv[1], 'r')
     
@@ -74,8 +74,12 @@ if __name__ == '__main__':
     
     for sentence in sentences:
         try:
-            parse = sexp.parseString(sentence)
-            print findListLevels(3, parse.asList(), 'FAMINE1')[3]
+            parse = sexp.parseString(sentence).asList()
+            semantic_role = findListLevels(3, parse, 'FAMINE1')[3][0]
+            if semantic_role == 'INANIMATE-CAUSE':
+                verb = findListLevels(1, parse, 'MAIN-VERB')[1]
+                theme = findListLevels(2, parse, 'THEME')[2][0][0]
+                print "FAMINE " + verb + " " + theme
         except IndexError:
             pass
         except TypeError:
@@ -86,7 +90,7 @@ if __name__ == '__main__':
             #print sentence
             #print
         #print sentence
-        print
+        #print
     
     #contents = file.read()
     #print len(re.findall('famine', contents))
