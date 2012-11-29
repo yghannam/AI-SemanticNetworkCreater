@@ -163,8 +163,6 @@ if __name__ == '__main__':
     sexpList = Group(LPAR + ZeroOrMore(sexp) + RPAR)
     sexp << ( Word(alphanums+"-_*/") | sexpList )
     sexpGroups = ZeroOrMore(sexp)
-    #print sentences[0]
-    #print sexpGroups.parseString(sentences[0]).asList()
     
     data = {"INANIMATE-CAUSE":{}, "THEME":{}, "EXPERIENCE":{}}
     
@@ -183,8 +181,14 @@ if __name__ == '__main__':
                 semantic_role = None
 
             if semantic_role == 'INANIMATE-CAUSE':
-                #print findListLevels(2, parse, 'THEME')
-                verb = findListLevels(1, parse, 'MAIN-VERB')[1]
+                level = 4
+                topicList = findListLevels(level, parse, topic+'1')
+                verb = findListLevels(1, topicList, 'MAIN-VERB')
+                while verb == -1:
+                    level += 1
+                    topicList = findListLevels(level, parse, topic+'1')
+                    verb = findListLevels(1, topicList, 'MAIN-VERB')
+                verb = verb[1]
                 if verb not in data[semantic_role]:
                     data[semantic_role] .update({verb:[]})
                 
@@ -253,7 +257,7 @@ if __name__ == '__main__':
                             data[semantic_role][verb].append(sense)             
                 #print parse[0][0], verb, other, sense
             count += 1                        
-        except IndexError as e:
+        except IndexError:
             ierr += 1
             #print e
             #parse = sexpGroups.parseString(sentence).asList()
@@ -264,9 +268,10 @@ if __name__ == '__main__':
             #print parse[0][0], semantic_role, len(semantic_role)
             #print
             
-        #except TypeError:
+        except TypeError:
             terr += 1
-            
+            #print verbList
+            #print verb
             #parse = sexpGroups.parseString(sentence).asList()
             #print parse
             #semantic_role = findListLevels(3, parse, topic+'1')
