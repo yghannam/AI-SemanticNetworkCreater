@@ -36,10 +36,11 @@ def toString(list):
     return string.rstrip("01234567890_ ")
         
 def parsePrep(list):
+    print list
     if len(list[2]) > 3:
-        return list[1] + " " + toString(list[2][1]) + " " + parsePrep(list[2][3])
+        return list[1] + "_" + toString(list[2][1]) + "_" + parsePrep(list[2][3])
     else:
-        return list[1] + " " + toString(list[2][1])
+        return list[1] + "_" + toString(list[2][1])
 
 def answer(first, second, third):
 
@@ -48,55 +49,55 @@ def answer(first, second, third):
             if role == 'INANIMATE-CAUSE':
                 for verb in data[role]:
                         for theme in data[role][verb]:
-                            print "FAMINE", verb, theme        
+                            print topic, verb, theme        
             else:
                 for verb in data[role]:
                         for theme in data[role][verb]:
-                            print theme, verb, "FAMINE"                                                        
+                            print theme, verb, topic                                                        
 
-    if first == 'FAMINE' and second == '?' and third == '?':
+    if first == topic and second == '?' and third == '?':
         for role in ['INANIMATE-CAUSE']:
             for verb in data[role]:
                     for theme in data[role][verb]:
                         print first, verb, theme
                         
-    if first == 'FAMINE' and second != '?' and third == '?':
+    if first == topic and second != '?' and third == '?':
         for role in ['INANIMATE-CAUSE']:
             for verb in data[role]:
                 if second == verb:
                     for theme in data[role][verb]:
                         print first, second, theme                
 
-    if first == 'FAMINE' and second == '?' and third != '?':
+    if first == topic and second == '?' and third != '?':
         for role in ['INANIMATE-CAUSE']:
             for verb in data[role]:
                     for theme in data[role][verb]:
                         if third == theme:
                             print first, verb, theme                     
 
-    if first == '?' and second == '?' and third == 'FAMINE':
+    if first == '?' and second == '?' and third == topic:
         for role in ['THEME', 'EXPERIENCE']:
             for verb in data[role]:
                     for theme in data[role][verb]:
-                        print theme, verb, 'FAMINE'
+                        print theme, verb, topic
                         
-    if first == '?' and second != '?' and third == 'FAMINE':
+    if first == '?' and second != '?' and third == topic:
         for role in ['THEME', 'EXPERIENCE']:
             for verb in data[role]:
                 if second == verb:
                     for theme in data[role][verb]:
-                        print theme, verb, 'FAMINE'                
+                        print theme, verb, topic                
 
-    if first != '?' and second == '?' and third == 'FAMINE':
+    if first != '?' and second == '?' and third == topic:
         for role in ['THEME', 'EXPERIENCE']:
             for verb in data[role]:
                     for theme in data[role][verb]:
                         if first == theme:
-                            print theme, verb, 'FAMINE'   
+                            print theme, verb, topic   
 
     if first != '?' and second != '?' and third != '?':
         exists = False
-        if first == 'FAMINE':
+        if first == topic:
             for verb in data['INANIMATE-CAUSE']:
                 if second == verb:
                     for theme in data['INANIMATE-CAUSE'][verb]:
@@ -126,7 +127,11 @@ def prompt():
 if __name__ == '__main__':
     print 'Hello\n'
     
-    file = open(sys.argv[1], 'r')
+    topic = sys.argv[1]
+    filename = topic+".int"
+    topic = topic.upper()
+    print topic
+    file = open(filename, 'r')
     
     sentences = []
     i = -1
@@ -157,6 +162,9 @@ if __name__ == '__main__':
     sexp = Forward()
     sexpList = Group(LPAR + ZeroOrMore(sexp) + RPAR)
     sexp << ( Word(alphanums+"-_*/") | sexpList )
+    sexpGroups = ZeroOrMore(sexp)
+    #print sentences[0]
+    #print sexpGroups.parseString(sentences[0]).asList()
     
     data = {"INANIMATE-CAUSE":{}, "THEME":{}, "EXPERIENCE":{}}
     
@@ -166,25 +174,35 @@ if __name__ == '__main__':
     perr = 0
     for sentence in sentences:
         try:
-            parse = sexp.parseString(sentence).asList()
-            semantic_role = findListLevels(3, parse, 'FAMINE1')[3][0]
-            
+            #print sexpGroups.parseString(sentence).asList()
+            parse = sexpGroups.parseString(sentence).asList()
+            semantic_role_list = findListLevels(3, parse, topic+'1')
+            if semantic_role_list != -1 and semantic_role_list[len(semantic_role_list)-1][0] in ['THEME', 'INANIMATE-CAUSE', 'EXPERIENCE']: 
+                semantic_role = semantic_role_list[len(semantic_role_list)-1][0]
+            else:
+                semantic_role = None
 
             if semantic_role == 'INANIMATE-CAUSE':
+                #print findListLevels(2, parse, 'THEME')
                 verb = findListLevels(1, parse, 'MAIN-VERB')[1]
                 if verb not in data[semantic_role]:
                     data[semantic_role] .update({verb:[]})
-                 
-                other = toString(findListLevels(2, parse, 'THEME')[1])          
-                if other not in data[semantic_role][verb]:
-                    data[semantic_role][verb].append(other)                  
                 
-                senses = findListLevels(2, parse, 'THEME')[2][0]
-                for x in senses:
-                    x = x.rstrip("0123456789 ")
-                    if x not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(x)             
-
+                themeList = findListLevels(2, parse, 'THEME')
+                if themeList != -1:
+                    if len(themeList) < 4:
+                        pass
+                    else:
+                        other = toString(themeList[1])          
+                        if other not in data[semantic_role][verb]:
+                            data[semantic_role][verb].append(other)                  
+                        
+                        sense = findListLevels(2, parse, 'THEME')[2][0][0].rstrip("01234567890- ")
+                        #print parse[0][0], sense
+                        if sense not in data[semantic_role][verb]:
+                            data[semantic_role][verb].append(sense)             
+                #print parse[0][0], verb, other, sense
+            
             if semantic_role == "EXPERIENCE":
                 verb = findListLevels(1, parse, 'MAIN-VERB')[1]
                 if verb not in data[semantic_role]:
@@ -194,12 +212,12 @@ if __name__ == '__main__':
                 if other not in data[semantic_role][verb]:
                     data[semantic_role][verb].append(other)                  
                 
-                senses = findListLevels(2, parse, 'EXPERIENCER')[2][0]
-                for x in senses:
-                    x = x.rstrip("0123456789 ")
-                    if x not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(x)        
-                        
+                sense = findListLevels(2, parse, 'EXPERIENCER')[2][0][0].rstrip("01234567890- ")
+                #print parse[0][0], sense
+                if sense not in data[semantic_role][verb]:
+                    data[semantic_role][verb].append(sense)                     
+                #print parse[0][0], verb, other, sense        
+                
             if semantic_role == "THEME":
                 #print findListLevels(1, parse, 'VERB')
                 verb = findListLevels(1, parse, 'MAIN-VERB')[1]
@@ -208,48 +226,54 @@ if __name__ == '__main__':
            
                 otherList = findListLevels(2, parse, 'INANIMATE-CAUSE')
                 if otherList != -1:                    
-                    if len(otherList) > 4:
-                        other = toString(otherList[1]) + " " + parsePrep(otherList[4])
+                    if len(otherList) > 4 and otherList[0] == 'PREP':
+                        #print "otherList",otherList
+                        other = toString(otherList[1]) + "_" + parsePrep(otherList[4])
                     else:
                         other = toString(otherList[1])
                     if other not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(other)                  
-                
+                        data[semantic_role][verb].append(other)   
+                    
+                    sense = findListLevels(2, parse, 'INANIMATE-CAUSE')[2][0][0].rstrip("01234567890- ")
+                    #print parse[0][0], sense
+                    if sense not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(sense)             
                 else:
                     otherList = findListLevels(2, parse, 'AGENT')
-                    if len(otherList) > 4:
-                        other = toString(otherList[1]) + " " + parsePrep(otherList[4])
-                    else:
-                        other = toString(otherList[1])
-                    if other not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(other)  
-                """
-                senses = findListLevels(2, parse, 'AGENT')[2][0]
-                for x in senses:
-                    x = x.rstrip("0123456789 ")
-                    if x not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(x)                                  
-                """
+                    if otherList != -1:
+                        if len(otherList) > 4:
+                            other = toString(otherList[1]) + "_" + parsePrep(otherList[4])
+                        else:
+                            other = toString(otherList[1])
+                        if other not in data[semantic_role][verb]:
+                            data[semantic_role][verb].append(other)  
+                        sense = findListLevels(2, parse, 'AGENT')[2][0][0].rstrip("01234567890- ")
+                        #print parse[0][0], sense
+                        if sense not in data[semantic_role][verb]:
+                            data[semantic_role][verb].append(sense)             
+                #print parse[0][0], verb, other, sense
             count += 1                        
-        except IndexError:
+        except IndexError as e:
             ierr += 1
-            pass
-            """
-            parse = sexp.parseString(sentence).asList()
+            #print e
+            #parse = sexpGroups.parseString(sentence).asList()
             #print parse
-            semantic_role = findListLevels(4, parse, 'FAMINE1')
-            print sentence
-            print
-            print semantic_role
-            print
-            pass
-            """
-        except TypeError:
+            #semantic_role = findListLevels(3, parse, topic+'1')
+            #if semantic_role[len(semantic_role)-1][0] in ['THEME', 'INANIMATE-CAUSE', 'EXPERIENCE']: 
+            #semantic_role = semantic_role[len(semantic_role)-1][0]
+            #print parse[0][0], semantic_role, len(semantic_role)
+            #print
+            
+        #except TypeError:
             terr += 1
-            pass
+            
+            #parse = sexpGroups.parseString(sentence).asList()
+            #print parse
+            #semantic_role = findListLevels(3, parse, topic+'1')
+            #print parse[0][0], semantic_role
+            #print
         except ParseException:
             perr += 1
-            pass
             #print "Could not parse: "
             #print sentence
             #print
@@ -259,6 +283,6 @@ if __name__ == '__main__':
     print terr, "type errors"
     print perr, "parse errors"
     print count, "out of", len(sentences), "sentences parsed\n"
-    p = 0
+    p = 1
     while p == 1:
         p = prompt()
