@@ -36,11 +36,14 @@ def toString(list):
     return string.rstrip("01234567890_ ")
         
 def parsePrep(list):
-    print list
-    if len(list[2]) > 3:
-        return list[1] + "_" + toString(list[2][1]) + "_" + parsePrep(list[2][3])
+    #print list
+    if list[0] == 'PREP':
+        if len(list[2]) > 3:
+            return list[1] + "_" + toString(list[2][1]) + "_" + parsePrep(list[2][3])
+        else:
+            return list[1] + "_" + toString(list[2][1])
     else:
-        return list[1] + "_" + toString(list[2][1])
+        return " "
 
 def answer(first, second, third):
 
@@ -193,69 +196,115 @@ if __name__ == '__main__':
                     data[semantic_role] .update({verb:[]})
                 
                 themeList = findListLevels(2, parse, 'THEME')
+                level = 4
+                topicList = findListLevels(level, parse, topic+'1')
+                themeList = findListLevels(2, topicList, 'THEME')
+                while themeList == -1 and topicList != -1:
+                    level += 1
+                    topicList = findListLevels(level, parse, topic+'1')
+                    if topicList != -1:
+                        themeList = findListLevels(2, topicList, 'THEME')
                 if themeList != -1:
+                    themeIndex = themeList.index(['THEME'])
                     if len(themeList) < 4:
                         pass
                     else:
-                        other = toString(themeList[1])          
+                        other = toString(themeList[themeIndex-2])          
                         if other not in data[semantic_role][verb]:
                             data[semantic_role][verb].append(other)                  
                         
-                        sense = findListLevels(2, parse, 'THEME')[2][0][0].rstrip("01234567890- ")
+                        sense = themeList[themeIndex-1][0][0].rstrip("01234567890- ")
                         #print parse[0][0], sense
                         if sense not in data[semantic_role][verb]:
                             data[semantic_role][verb].append(sense)             
                 #print parse[0][0], verb, other, sense
             
             if semantic_role == "EXPERIENCE":
-                verb = findListLevels(1, parse, 'MAIN-VERB')[1]
+                level = 4
+                topicList = findListLevels(level, parse, topic+'1')
+                verb = findListLevels(1, topicList, 'MAIN-VERB')
+                while verb == -1:
+                    level += 1
+                    topicList = findListLevels(level, parse, topic+'1')
+                    verb = findListLevels(1, topicList, 'MAIN-VERB')
+                verb = verb[1]
                 if verb not in data[semantic_role]:
                     data[semantic_role] .update({verb:[]})
                 
-                other = toString(findListLevels(2, parse, 'EXPERIENCER')[1])      
-                if other not in data[semantic_role][verb]:
-                    data[semantic_role][verb].append(other)                  
-                
-                sense = findListLevels(2, parse, 'EXPERIENCER')[2][0][0].rstrip("01234567890- ")
-                #print parse[0][0], sense
-                if sense not in data[semantic_role][verb]:
-                    data[semantic_role][verb].append(sense)                     
-                #print parse[0][0], verb, other, sense        
-                
-            if semantic_role == "THEME":
-                #print findListLevels(1, parse, 'VERB')
-                verb = findListLevels(1, parse, 'MAIN-VERB')[1]
-                if verb not in data[semantic_role]:
-                    data[semantic_role] .update({verb:[]})              
-           
-                otherList = findListLevels(2, parse, 'INANIMATE-CAUSE')
-                if otherList != -1:                    
-                    if len(otherList) > 4 and otherList[0] == 'PREP':
-                        #print "otherList",otherList
-                        other = toString(otherList[1]) + "_" + parsePrep(otherList[4])
+                exList = findListLevels(2, parse, 'EXPERIENCER')
+                level = 4
+                topicList = findListLevels(level, parse, topic+'1')
+                exList = findListLevels(2, topicList, 'EXPERIENCER')
+                while themeList == -1:
+                    level += 1
+                    topicList = findListLevels(level, parse, topic+'1')
+                    exList = findListLevels(2, topicList, 'EXPERIENCER')
+                if exList != -1:
+                    exIndex = exList.index(['EXPERIENCER'])
+                    if len(exList) < 4:
+                        pass
                     else:
-                        other = toString(otherList[1])
-                    if other not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(other)   
-                    
-                    sense = findListLevels(2, parse, 'INANIMATE-CAUSE')[2][0][0].rstrip("01234567890- ")
-                    #print parse[0][0], sense
-                    if sense not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(sense)             
-                else:
-                    otherList = findListLevels(2, parse, 'AGENT')
-                    if otherList != -1:
-                        if len(otherList) > 4:
-                            other = toString(otherList[1]) + "_" + parsePrep(otherList[4])
-                        else:
-                            other = toString(otherList[1])
+                        other = toString(exList[exIndex-2])          
                         if other not in data[semantic_role][verb]:
-                            data[semantic_role][verb].append(other)  
-                        sense = findListLevels(2, parse, 'AGENT')[2][0][0].rstrip("01234567890- ")
+                            data[semantic_role][verb].append(other)                  
+                        
+                        sense = exList[exIndex-1][0][0].rstrip("01234567890- ")
                         #print parse[0][0], sense
                         if sense not in data[semantic_role][verb]:
                             data[semantic_role][verb].append(sense)             
                 #print parse[0][0], verb, other, sense
+                
+            if semantic_role == "THEME":
+                level = 4
+                topicList = findListLevels(level, parse, topic+'1')
+                verb = findListLevels(1, topicList, 'MAIN-VERB')
+                while verb == -1:
+                    level += 1
+                    topicList = findListLevels(level, parse, topic+'1')
+                    verb = findListLevels(1, topicList, 'MAIN-VERB')
+                verb = verb[1]
+                #verb = findListLevels(1, parse, 'MAIN-VERB')[1]
+                if verb not in data[semantic_role]:
+                    data[semantic_role] .update({verb:[]})              
+           
+                level = 4
+                topicList = findListLevels(level, parse, topic+'1')
+                icList = findListLevels(2, topicList, 'INANIMATE-CAUSE')
+                agList = findListLevels(2, topicList, 'AGENT')
+                while icList == -1 and agList == -1:
+                    level += 1
+                    topicList = findListLevels(level, parse, topic+'1')
+                    if topicList == -1:
+                        break
+                    icList = findListLevels(2, topicList, 'INANIMATE-CAUSE')
+                    agList = findListLevels(2, topicList, 'AGENT')                
+                
+                if icList != -1:
+                    icIndex = icList.index(['INANIMATE-CAUSE'])
+                    if len(icList) == icIndex+2:# and icList[0] != 'PREP':
+                        #print "otherList",otherList
+                        other = toString(icList[icIndex-2]) + "_" + parsePrep(icList[icIndex+1])
+                    else:
+                        other = toString(icList[icIndex-2])
+                    if other not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(other)   
+                    
+                    sense = icList[icIndex-1][0][0].rstrip("01234567890- ")
+                    if sense not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(sense)   
+                    #print parse[0][0], verb, other, sense
+                if agList != -1:
+                    agIndex = agList.index(['AGENT'])
+                    if len(agList) == agIndex+2:# and agList[0] == 'PREP':
+                        other = toString(agList[agIndex-2]) + "_" + parsePrep(agList[agIndex+1])
+                    else:
+                        other = toString(agList[agIndex-2])
+                    if other not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(other)  
+                    sense = agList[agIndex-1][0][0].rstrip("01234567890- ")
+                    if sense not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(sense)             
+                    #print parse[0][0], verb, other, sense
             count += 1                        
         except IndexError:
             ierr += 1
