@@ -29,10 +29,17 @@ def findListLevels( levels, inList, item):
     return result
     
 def toString(list):
-        string = ""
-        for x in list:
-            string += x[1] + " "
-        return string
+    string = ""
+    for x in list:
+        if x[0] != 'DT':
+            string += x[1] + "_"
+    return string.rstrip("01234567890_ ")
+        
+def parsePrep(list):
+    if len(list[2]) > 3:
+        return list[1] + " " + toString(list[2][1]) + " " + parsePrep(list[2][3])
+    else:
+        return list[1] + " " + toString(list[2][1])
 
 def answer(first, second, third):
 
@@ -153,6 +160,10 @@ if __name__ == '__main__':
     
     data = {"INANIMATE-CAUSE":{}, "THEME":{}, "EXPERIENCE":{}}
     
+    count = 0
+    ierr = 0
+    terr = 0
+    perr = 0
     for sentence in sentences:
         try:
             parse = sexp.parseString(sentence).asList()
@@ -164,9 +175,9 @@ if __name__ == '__main__':
                 if verb not in data[semantic_role]:
                     data[semantic_role] .update({verb:[]})
                  
-                theme = toString(findListLevels(2, parse, 'THEME')[1]).rstrip()                 
-                if theme not in data[semantic_role][verb]:
-                    data[semantic_role][verb].append(theme)                  
+                other = toString(findListLevels(2, parse, 'THEME')[1])          
+                if other not in data[semantic_role][verb]:
+                    data[semantic_role][verb].append(other)                  
                 
                 senses = findListLevels(2, parse, 'THEME')[2][0]
                 for x in senses:
@@ -179,28 +190,75 @@ if __name__ == '__main__':
                 if verb not in data[semantic_role]:
                     data[semantic_role] .update({verb:[]})
                 
-                print findListLevels(1, parse, 'EXPERIENCER')
-                experiencer = toString(findListLevels(2, parse, 'EXPERIENCER')[1]).rstrip()                 
-                if experiencer not in data[semantic_role][verb]:
-                    data[semantic_role][verb].append(experiencer)                  
+                other = toString(findListLevels(2, parse, 'EXPERIENCER')[1])      
+                if other not in data[semantic_role][verb]:
+                    data[semantic_role][verb].append(other)                  
                 
                 senses = findListLevels(2, parse, 'EXPERIENCER')[2][0]
                 for x in senses:
                     x = x.rstrip("0123456789 ")
                     if x not in data[semantic_role][verb]:
-                        data[semantic_role][verb].append(x)             
-
+                        data[semantic_role][verb].append(x)        
+                        
+            if semantic_role == "THEME":
+                #print findListLevels(1, parse, 'VERB')
+                verb = findListLevels(1, parse, 'MAIN-VERB')[1]
+                if verb not in data[semantic_role]:
+                    data[semantic_role] .update({verb:[]})              
+           
+                otherList = findListLevels(2, parse, 'INANIMATE-CAUSE')
+                if otherList != -1:                    
+                    if len(otherList) > 4:
+                        other = toString(otherList[1]) + " " + parsePrep(otherList[4])
+                    else:
+                        other = toString(otherList[1])
+                    if other not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(other)                  
+                
+                else:
+                    otherList = findListLevels(2, parse, 'AGENT')
+                    if len(otherList) > 4:
+                        other = toString(otherList[1]) + " " + parsePrep(otherList[4])
+                    else:
+                        other = toString(otherList[1])
+                    if other not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(other)  
+                """
+                senses = findListLevels(2, parse, 'AGENT')[2][0]
+                for x in senses:
+                    x = x.rstrip("0123456789 ")
+                    if x not in data[semantic_role][verb]:
+                        data[semantic_role][verb].append(x)                                  
+                """
+            count += 1                        
         except IndexError:
+            ierr += 1
             pass
+            """
+            parse = sexp.parseString(sentence).asList()
+            #print parse
+            semantic_role = findListLevels(4, parse, 'FAMINE1')
+            print sentence
+            print
+            print semantic_role
+            print
+            pass
+            """
         except TypeError:
+            terr += 1
             pass
         except ParseException:
+            perr += 1
             pass
             #print "Could not parse: "
             #print sentence
             #print
         #print sentence
-    print data
-    p = 1
+    #print data
+    print ierr, "index errors"
+    print terr, "type errors"
+    print perr, "parse errors"
+    print count, "out of", len(sentences), "sentences parsed\n"
+    p = 0
     while p == 1:
         p = prompt()
