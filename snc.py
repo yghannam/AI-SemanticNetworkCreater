@@ -131,7 +131,7 @@ if __name__ == '__main__':
     print 'Hello\n'
     
     topic = sys.argv[1]
-    filename = topic+".int"
+    filename = sys.argv[2]
     topic = topic.upper()
     print topic
     file = open(filename, 'r')
